@@ -1,0 +1,31 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path("", views.home, name="home"),
+    path("register/tourist/", views.tourist_register, name="tourist_register"),
+    path("register/owner/", views.owner_register, name="owner_register"),
+    path("login/", views.login_view, name="login"),
+    path("logout/", views.logout_view, name="logout"),
+    path("profile/", views.profile_view, name="profile"),
+    path("profile/settings/", views.profile_settings, name="profile_settings"),
+    path("change-password/", views.change_password, name="change_password"),
+    path("password-reset/", views.password_reset_request, name="password_reset"),
+    path("password-reset/done/", views.password_reset_done, name="password_reset_done"),
+    path("dashboard/", views.dashboard, name="dashboard"),
+    path("route-planner/", views.route_planner, name="route_planner"),
+    path("saved-trips/clear/", views.clear_saved_trips, name="clear_saved_trips"),
+    path("restaurants/", views.restaurant_list, name="restaurant_list"),
+    path("restaurants/<int:pk>/", views.restaurant_detail, name="restaurant_detail"),
+    path("save-trip/", views.save_trip, name="save_trip"),
+    path("owner-dashboard/", views.owner_dashboard, name="owner_dashboard"),
+    path("owner-restaurant/new/", views.owner_restaurant_form, name="owner_restaurant_new"),
+    path("owner-restaurant/<int:pk>/", views.owner_restaurant_form, name="owner_restaurant_edit"),
+    path("owner-restaurant/<int:restaurant_id>/dishes/new/", views.owner_dish_form, name="owner_dish_new"),
+    path("owner-restaurant/<int:restaurant_id>/dishes/<int:pk>/", views.owner_dish_form, name="owner_dish_edit"),
+    path("owner-restaurant/<int:restaurant_id>/dishes/<int:pk>/delete/", views.delete_dish, name="delete_dish"),
+    path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
+    path("admin-dashboard/restaurant/<int:restaurant_id>/status/", views.update_restaurant_status, name="update_restaurant_status"),
+    path("chatbot/", views.chatbot_view, name="chatbot"),
+    path("submit-review/<int:restaurant_id>/", views.submit_review, name="submit_review"),
+]

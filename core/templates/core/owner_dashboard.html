@@ -1,0 +1,58 @@
+{% extends 'core/base.html' %}
+{% block title %}Owner Dashboard{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Restaurant Owner Dashboard</h2>
+        <a href="{% url 'owner_restaurant_new' %}" class="btn btn-primary">Add Restaurant</a>
+    </div>
+    <div class="row g-4">
+        {% for restaurant in restaurants %}
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h4>{{ restaurant.name }}</h4>
+                        <span class="badge bg-info text-dark">{{ restaurant.status }}</span>
+                    </div>
+                    <p>{{ restaurant.address }}</p>
+                    <div class="small text-muted">
+                        <div>{{ restaurant.cuisine_type|default:"Cuisine not listed" }} · {{ restaurant.price_range|default:"Price range not listed" }}</div>
+                        <div>Hours: {{ restaurant.opening_hours|default:"Not listed" }}</div>
+                        <div>Contact: {{ restaurant.contact_number|default:"Not listed" }}</div>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap mt-3">
+                        <a href="{% url 'owner_restaurant_edit' restaurant.pk %}" class="btn btn-outline-primary btn-sm">Edit</a>
+                        <a href="{% url 'owner_dish_new' restaurant.pk %}" class="btn btn-outline-success btn-sm">Add Dish</a>
+                    </div>
+
+                    {% if restaurant.signature_dishes.exists %}
+                    <div class="mt-4">
+                        <h6>Signature Dishes</h6>
+                        {% for dish in restaurant.signature_dishes.all %}
+                        <div class="border rounded p-2 mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>{{ dish.name }}</strong>
+                                <span class="badge bg-light text-dark">{{ dish.price }}</span>
+                            </div>
+                            <div class="small text-muted">{{ dish.description|default:'No description yet.' }}</div>
+                            <div class="mt-2 d-flex gap-2 flex-wrap">
+                                <a href="{% url 'owner_dish_edit' restaurant.pk dish.pk %}" class="btn btn-link btn-sm p-0">Edit</a>
+                                <form method="post" action="{% url 'delete_dish' restaurant.pk dish.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-link btn-sm text-danger p-0">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12"><p>No restaurants yet.</p></div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

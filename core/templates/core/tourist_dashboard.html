@@ -1,0 +1,43 @@
+{% extends 'core/base.html' %}
+{% block title %}Tourist Dashboard{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Tourist Dashboard</h2>
+        <a href="{% url 'route_planner' %}" class="btn btn-primary">Plan a Trip</a>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0">Saved Trips</h4>
+                        {% if trips %}
+                        <form method="post" action="{% url 'clear_saved_trips' %}" onsubmit="return confirm('Clear all your saved trip plans?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Clear plans</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% for trip in trips %}
+                    <div class="border rounded p-3 mb-3">
+                        <h5><a class="text-decoration-none" href="{% url 'route_planner' %}?saved_trip={{ trip.pk }}">{{ trip.title }}</a></h5>
+                        <p class="mb-2">{{ trip.notes }}</p>
+                        <p class="small text-muted mb-0">
+                            {% for stop in trip.stops.all %}
+                                {% if not forloop.first %} → {% endif %}{{ stop.name }}
+                            {% empty %}
+                                No stops in this plan.
+                            {% endfor %}
+                        </p>
+                        <a class="btn btn-outline-primary btn-sm mt-3" href="{% url 'route_planner' %}?saved_trip={{ trip.pk }}">View trip plan</a>
+                    </div>
+                    {% empty %}
+                    <p>No trips saved yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

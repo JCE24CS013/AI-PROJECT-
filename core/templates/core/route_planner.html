@@ -1,0 +1,204 @@
+{% extends 'core/base.html' %}
+{% block title %}Route Planner{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="mb-4">
+        <span class="eyebrow">YOUR NEXT ADVENTURE</span>
+        <h1 class="display-6 fw-bold mt-2">Plan your route</h1>
+        <p class="text-muted">Enter your starting point, destination, trip length, and interests to get a day-by-day outline and travel suggestions.</p>
+    </div>
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-3">Where to?</h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <datalist id="route-locations">
+                            {% for location in locations %}<option value="{{ location }}">{% endfor %}
+                        </datalist>
+                        <button type="submit" class="btn btn-primary w-100">Compare route options</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-2">
+                    <div id="map" class="route-map"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if route_info %}
+    <section class="mt-4">
+        <div class="alert alert-info mb-4">
+            <strong>{{ route_info.start_location }} → {{ route_info.end_location }}</strong>
+            <span class="ms-2">{{ route_info.days }} day{{ route_info.days|pluralize }}</span>
+            {% if route_info.distance_km %}
+            <span class="ms-2">About {{ route_info.distance_km }} km (straight-line distance)</span>
+            {% endif %}
+            <div class="mt-3">
+                <a class="btn btn-outline-primary btn-sm"
+                   href="https://www.google.com/maps/dir/?api=1&amp;origin={{ route_info.start_location|urlencode }}&amp;destination={{ route_info.end_location|urlencode }}"
+                   target="_blank"
+                   rel="noopener noreferrer">Open route in Google Maps</a>
+            </div>
+        </div>
+        <form method="post" action="{% url 'save_trip' %}" class="mb-4">
+            {% csrf_token %}
+            <input type="hidden" name="start_location" value="{{ route_info.start_location }}">
+            <input type="hidden" name="end_location" value="{{ route_info.end_location }}">
+            <input type="hidden" name="days" value="{{ route_info.days }}">
+            <input type="hidden" name="interests" value="{{ form.cleaned_data.interests }}">
+            <button type="submit" class="btn btn-primary">Save this plan to dashboard</button>
+        </form>
+
+        {% if route_info.transport_options %}
+        <h2 class="h4 mb-3">Ways to travel</h2>
+        <div class="row g-3 mb-4">
+            {% for option in route_info.transport_options %}
+            <div class="col-sm-6 col-xl-3">
+                <article class="card h-100 border-0 shadow-sm {% if option.mode == route_info.recommended_mode %}route-option-best{% endif %}">
+                    <div class="card-body">
+                        {% if option.mode == route_info.recommended_mode %}<span class="badge bg-success mb-2">Suggested</span>{% endif %}
+                        <h3 class="h5 text-capitalize">{{ option.mode }}</h3>
+                        <p class="mb-2"><strong>~{{ option.hours }} hours</strong></p>
+                        <p class="small text-muted mb-0">{{ option.note }}</p>
+                    </div>
+                </article>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="small text-muted">The suggested mode is a simple distance heuristic (car under 150 km, train up to 600 km, plane for longer distances); bus is shown as an alternative. Times use straight-line distance and typical speeds, not live directions, availability, schedules, or fares. Check operators and current travel conditions before booking.</p>
+        {% else %}
+        <div class="alert alert-warning">{{ route_info.location_notice }}</div>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    {% if day_plan %}
+    <section class="mt-5">
+        <span class="eyebrow">YOUR ITINERARY OUTLINE</span>
+        <h2 class="h3 mt-2 mb-3">{{ day_plan|length }}-day plan: {{ route_info.start_location }} to {{ route_info.end_location }}</h2>
+        <p class="small text-muted">Each day includes a suggested timed schedule based on the destination catalog. Times and activities are planning suggestions, not verified venue hours or bookings; confirm access, opening hours, and local travel conditions.</p>
+        <div class="row g-3">
+            {% for day in day_plan %}
+            <div class="col-md-6 col-xl-4">
+                <article class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
+                            <div>
+                                <span class="eyebrow">DAY {{ day.number }}</span>
+                                <h3 class="h5 mt-1 mb-0">{{ day.location }}</h3>
+                            </div>
+                            {% if day.destination %}
+                            <span class="badge bg-success">Suggested stop</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Flexible</span>
+                            {% endif %}
+                        </div>
+                        {% if day.destination %}
+                        <div class="small text-muted mb-3">{{ day.destination.category|title }} · {{ day.destination.region }}</div>
+                        {% endif %}
+                        <ol class="day-plan-schedule">
+                            {% for activity in day.activities %}
+                            <li class="day-plan-item">
+                                <time>{{ activity.time }}</time>
+                                <strong>{{ activity.title }}</strong>
+                                <p>{{ activity.details }}</p>
+                                <small>{{ activity.tip }}</small>
+                            </li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+                </article>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <div class="row g-4 mt-3">
+        <section class="col-lg-6">
+            <h2 class="h4 mb-3">Suggested destinations</h2>
+            {% for destination in destinations %}
+            <article class="border rounded-3 p-3 mb-3 bg-white">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="destination-pin-icon" aria-hidden="true">📍</span>
+                    <strong>{{ destination.name }}</strong>
+                </div>
+                <div class="small text-muted">{{ destination.category|title }} · {{ destination.region }}</div>
+                {% if destination.description %}<p class="mb-0 mt-2">{{ destination.description }}</p>{% endif %}
+            </article>
+            {% empty %}
+            <p class="text-muted">No destinations are in the catalog yet. Run <code>python manage.py seed_data</code> to add the curated India destination catalog.</p>
+            {% endfor %}
+        </section>
+        <section class="col-lg-6">
+            <h2 class="h4 mb-3">Restaurant discovery</h2>
+            <p class="text-muted">Search live restaurant listings near your destination or by cuisine.</p>
+            <a class="btn btn-outline-primary" href="{% url 'restaurant_list' %}">Search Restaurants</a>
+            {% if restaurants %}
+            <div class="mt-3">
+                {% for restaurant in restaurants %}
+                <article class="border rounded-3 p-3 mb-3 bg-white">
+                    <strong>{{ restaurant.name }}</strong>
+                    <div class="small text-muted">{{ restaurant.region }}</div>
+                    {% if restaurant.signature_dishes.all %}
+                    <ul class="mb-0 mt-2 ps-3">
+                        {% for dish in restaurant.signature_dishes.all %}
+                        <li>{{ dish.name }}{% if restaurant.is_demo %} — Example price only: ₹{{ dish.price }}{% endif %}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </article>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{{ map_points|json_script:"route-map-points" }}
+{% if route_info.start_coordinates and route_info.end_coordinates %}
+{{ route_info.start_coordinates|json_script:"route-start" }}
+{{ route_info.end_coordinates|json_script:"route-end" }}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const map = L.map('map').setView([22.9734, 78.6569], 4.5);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri',
+    maxZoom: 19
+  }).addTo(map);
+
+  const bounds = [];
+  const points = JSON.parse(document.getElementById('route-map-points').textContent);
+  points.forEach((point) => {
+    const marker = L.marker([point.latitude, point.longitude]).addTo(map);
+    const popup = document.createElement('div');
+    const title = document.createElement('strong');
+    title.textContent = point.name;
+    const type = document.createElement('div');
+    type.textContent = point.kind;
+    popup.append(title, type);
+    marker.bindPopup(popup);
+  });
+
+  const startElement = document.getElementById('route-start');
+  const endElement = document.getElementById('route-end');
+  if (startElement && endElement) {
+    const start = JSON.parse(startElement.textContent);
+    const end = JSON.parse(endElement.textContent);
+    L.marker(start).addTo(map).bindPopup('Route start');
+    L.marker(end).addTo(map).bindPopup('Route destination');
+    L.polyline([start, end], {color: '#1f6feb', dashArray: '8 8'}).bindPopup('Schematic straight-line connection, not road directions').addTo(map);
+    bounds.push(start, end);
+  }
+  if (bounds.length) map.fitBounds(bounds, {padding: [24, 24], maxZoom: 12});
+</script>
+{% endblock %}

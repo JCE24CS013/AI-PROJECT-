@@ -1,0 +1,66 @@
+{% extends 'core/base.html' %}
+{% block title %}Profile Settings{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h2 class="mb-4">Profile Settings</h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.first_name.label_tag }}
+                                {{ form.first_name }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.last_name.label_tag }}
+                                {{ form.last_name }}
+                            </div>
+                            <div class="col-md-12">
+                                {{ form.email.label_tag }}
+                                {{ form.email }}
+                            </div>
+                            {% if is_tourist %}
+                            <div class="col-md-6">
+                                {{ form.home_city.label_tag }}
+                                {{ form.home_city }}
+                            </div>
+                            {% endif %}
+                            {% if is_tourist %}
+                            <div class="col-md-6">
+                                {{ form.preferred_interests.label_tag }}
+                                {{ form.preferred_interests }}
+                            </div>
+                            {% endif %}
+                            {% if is_owner %}
+                            <div class="col-md-6">
+                                {{ form.restaurant_name.label_tag }}
+                                {{ form.restaurant_name }}
+                            </div>
+                            {% endif %}
+                            {% if is_owner %}
+                            <div class="col-md-6">
+                                {{ form.contact_number.label_tag }}
+                                {{ form.contact_number }}
+                            </div>
+                            {% endif %}
+                            {% if form.bio %}
+                            <div class="col-12">
+                                {{ form.bio.label_tag }}
+                                {{ form.bio }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mt-4 d-flex gap-2 flex-wrap">
+                            <button type="submit" class="btn btn-primary">Save changes</button>
+                            <a href="{% url 'change_password' %}" class="btn btn-outline-secondary">Change password</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

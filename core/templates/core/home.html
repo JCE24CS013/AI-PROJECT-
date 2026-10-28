@@ -1,0 +1,95 @@
+{% extends 'core/base.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="hero-section bg-gradient text-white">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <span class="home-eyebrow">YOUR NEXT ADVENTURE STARTS HERE</span>
+                <h1 class="display-4 fw-bold mt-3">Welcome{% if user.first_name %}, {{ user.first_name }}{% endif %}!</h1>
+                <p class="lead mt-3 mb-4">Turn that "one day" trip into a journey you can look forward to.</p>
+                <blockquote class="home-quote mb-0">
+                    <p class="mb-2">“Every great journey begins with a little planning and a lot of curiosity.”</p>
+                    <footer class="small">Your next story is waiting.</footer>
+                </blockquote>
+            </div>
+            <div class="col-lg-5 mt-4 mt-lg-0">
+                <div class="home-start-card">
+                    <h2 class="h4 fw-bold mb-1">How would you like to begin?</h2>
+                    <p class="text-muted mb-4">Choose your next step.</p>
+                    <a href="{% url 'route_planner' %}" class="home-start-option">
+                        <span class="home-start-icon" aria-hidden="true">✈</span>
+                        <span><strong>Plan a trip</strong><small>Build a route and get a day-by-day outline.</small></span>
+                        <span class="home-start-arrow" aria-hidden="true">→</span>
+                    </a>
+                    <a href="#popular-destinations" class="home-start-option">
+                        <span class="home-start-icon" aria-hidden="true">⌖</span>
+                        <span><strong>Explore destinations</strong><small>Find inspiration for where to go next.</small></span>
+                        <span class="home-start-arrow" aria-hidden="true">→</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="popular-destinations" class="container py-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Popular Destinations</h2>
+        </div>
+    </div>
+    <div class="row g-4">
+        {% for destination in destinations %}
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 shadow-sm">
+                {% if destination.image %}<img src="{{ destination.image.url }}" class="card-img-top destination-thumb" alt="{{ destination.name }}">{% endif %}
+                <div class="card-body">
+                    <span class="badge bg-secondary mb-2">{{ destination.category|title }}</span>
+                    <h5>{{ destination.name }}</h5>
+                    <p class="text-muted small">{{ destination.region }}</p>
+                    <a
+                        class="btn btn-sm btn-outline-primary"
+                        href="https://www.google.com/maps/search/?api=1&amp;query={{ destination.latitude }},{{ destination.longitude }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >View on Google Maps</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p>No destinations available yet.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="container pb-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Looking for somewhere to eat?</h2>
+            <p class="text-muted">Search live restaurant listings by name, cuisine, or location.</p>
+            <a href="{% url 'restaurant_list' %}" class="btn btn-outline-primary">Search restaurants</a>
+        </div>
+    </div>
+    {% if restaurants %}
+    <div class="row g-3 mt-2">
+        {% for restaurant in restaurants %}
+        <div class="col-md-6 col-lg-4">
+            <article class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <span class="badge bg-warning text-dark mb-2">Demo example</span>
+                    <h3 class="h6 mb-1">{{ restaurant.name }}</h3>
+                    <div class="small text-muted mb-2">{{ restaurant.region }}</div>
+                    {% if restaurant.signature_dishes.all %}
+                    {% for dish in restaurant.signature_dishes.all %}
+                    <div class="small">{{ dish.name }} · Example price only: ₹{{ dish.price }}</div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

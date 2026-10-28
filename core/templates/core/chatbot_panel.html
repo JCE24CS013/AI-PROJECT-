@@ -1,0 +1,197 @@
+{% extends 'core/base.html' %}
+{% block title %}AI Assistant{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="card shadow-sm border-0 mx-auto" style="max-width: 900px;">
+        <div class="card-body">
+            <h1 class="h3 mb-1">AI Travel Assistant</h1>
+            <p class="text-muted mb-4">Ask about routes, destinations, restaurants, and owner-submitted signature dishes.</p>
+            <div class="chat-box border rounded p-3 mb-3" style="min-height: 300px; background: #f8f9fa;">
+                {% for message in messages %}
+                    <div class="mb-2">
+                        <strong>{{ message.sender|title }}:</strong>
+                        <div class="chat-message">{{ message.content }}</div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted">Try “Suggest Kerala dishes from restaurants in the app” or “How should I travel from Kochi to Munnar?”</p>
+                {% endfor %}
+            </div>
+            <form id="chatbot-form">
+                {% csrf_token %}
+                <div class="input-group">
+                    <input id="chat-input" type="text" maxlength="1000" class="form-control" placeholder="Ask about local food, restaurants, or routes..." required>
+                    <button id="chat-submit" class="btn btn-primary" type="submit">Send</button>
+                </div>
+                <div id="chat-status" class="small text-muted mt-2" role="status" aria-live="polite"></div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const form = document.getElementById('chatbot-form');
+  const input = document.getElementById('chat-input');
+  const submitButton = document.getElementById('chat-submit');
+  const status = document.getElementById('chat-status');
+  const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  function renderAssistantContent(element, content) {
+    element.textContent = '';
+    const urlPattern = /https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=[^\s]+/g;
+    let lastIndex = 0;
+    for (const match of content.matchAll(urlPattern)) {
+      const url = match[0].replace(/[.,)]+$/, '');
+      element.append(document.createTextNode(content.slice(lastIndex, match.index)));
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = 'Open in Google Maps';
+      element.appendChild(link);
+      lastIndex = match.index + url.length;
+    }
+    element.append(document.createTextNode(content.slice(lastIndex)));
+  }
+
+  function appendMessage(sender, content, places = [], showGoogleAttribution = false, databaseRestaurants = []) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'mb-2';
+    const heading = document.createElement('strong');
+    heading.textContent = sender + ':';
+    const body = document.createElement('div');
+    body.className = 'chat-message';
+    if (sender === 'You') body.textContent = content;
+    else renderAssistantContent(body, content);
+    wrapper.append(heading, body);
+    if (sender === 'Assistant' && Array.isArray(places) && places.length) {
+      const list = document.createElement('ul');
+      list.className = 'chatbot-place-results';
+      places.forEach((place) => {
+        const item = document.createElement('li');
+        const name = document.createElement('strong');
+        name.textContent = place.name || 'Restaurant';
+        item.appendChild(name);
+        if (place.address) {
+          const address = document.createElement('p');
+          address.textContent = place.address;
+          item.appendChild(address);
+        }
+        if (place.google_rating !== null && place.google_rating !== undefined) {
+          const rating = document.createElement('p');
+          const count = place.google_review_count ? ` (${place.google_review_count} ratings)` : '';
+          rating.textContent = `Google rating: ${place.google_rating}${count}`;
+          item.appendChild(rating);
+        }
+        if (place.place_type) {
+          const type = document.createElement('p');
+          type.textContent = place.place_type;
+          item.appendChild(type);
+        }
+        try {
+          const mapsUrl = new URL(place.google_maps_url);
+          if (mapsUrl.protocol === 'https:' && ['maps.google.com', 'google.com', 'www.google.com'].includes(mapsUrl.hostname)) {
+            const link = document.createElement('a');
+            link.href = mapsUrl.href;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = 'View in Google Maps';
+            item.appendChild(link);
+          }
+        } catch (error) {
+          // Omit an invalid provider URL; keep the live listing details visible.
+        }
+        list.appendChild(item);
+      });
+      wrapper.appendChild(list);
+    }
+    if (sender === 'Assistant' && Array.isArray(databaseRestaurants) && databaseRestaurants.length) {
+      const list = document.createElement('ul');
+      list.className = 'chatbot-place-results';
+      databaseRestaurants.forEach((restaurant) => {
+        const item = document.createElement('li');
+        const name = document.createElement('strong');
+        name.textContent = restaurant.name || 'Restaurant';
+        item.appendChild(name);
+        if (restaurant.map_url) {
+          const link = document.createElement('a');
+          link.href = restaurant.map_url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = 'Open in Google Maps';
+          item.append(document.createTextNode(' '), link);
+        }
+        list.appendChild(item);
+      });
+      wrapper.appendChild(list);
+    }
+    if (showGoogleAttribution) {
+      const attribution = document.createElement('span');
+      attribution.className = 'google-maps-attribution';
+      attribution.setAttribute('translate', 'no');
+      attribution.textContent = 'Google Maps';
+      wrapper.appendChild(attribution);
+    }
+    document.querySelector('.chat-box').appendChild(wrapper);
+    return body;
+  }
+
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (window.chatbotRequestInFlight) return;
+    const prompt = input.value.trim();
+    if (!prompt) return;
+
+    window.chatbotRequestInFlight = true;
+    appendMessage('You', prompt);
+    input.value = '';
+    submitButton.disabled = true;
+    status.textContent = 'Thinking...';
+    const assistantText = appendMessage('Assistant', '');
+
+    try {
+      const response = await fetch('{% url "chatbot" %}', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'Accept': 'text/event-stream'
+        },
+        body: new URLSearchParams({prompt}),
+        credentials: 'same-origin'
+      });
+      const completion = await window.consumeChatbotStream(response, (text) => {
+        assistantText.textContent += text;
+        const chatBox = document.querySelector('.chat-box');
+        chatBox.scrollTop = chatBox.scrollHeight;
+      });
+      renderAssistantContent(assistantText, assistantText.textContent);
+      if ((Array.isArray(completion.google_places) && completion.google_places.length)
+          || (Array.isArray(completion.database_restaurants) && completion.database_restaurants.length)) {
+        assistantText.parentElement.remove();
+        appendMessage(
+          'Assistant',
+          completion.reply || '',
+          completion.google_places,
+          completion.google_maps_attribution,
+          completion.database_restaurants,
+        );
+      }
+      status.textContent = '';
+    } catch (error) {
+      const message = error.message || 'The assistant is unavailable right now. Please try again.';
+      assistantText.textContent = assistantText.textContent
+        ? `${assistantText.textContent}\n\n${message}`
+        : message;
+      status.textContent = '';
+    } finally {
+      window.chatbotRequestInFlight = false;
+      submitButton.disabled = false;
+      input.focus();
+      const chatBox = document.querySelector('.chat-box');
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  });
+</script>
+{% endblock %}

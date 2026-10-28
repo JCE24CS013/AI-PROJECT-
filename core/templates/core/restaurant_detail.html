@@ -1,0 +1,76 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ restaurant.name }}{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="row g-4">
+        <div class="col-lg-5">
+            {% if restaurant.image %}<img src="{{ restaurant.image.url }}" class="img-fluid rounded shadow-sm" alt="{{ restaurant.name }}">{% endif %}
+        </div>
+        <div class="col-lg-7">
+            {% if restaurant.is_demo %}<div class="alert alert-warning"><strong>Fictional demo example.</strong> This is not a real restaurant. Food and prices are examples only, not a real menu. Do not use it to plan a visit or place an order.</div>{% endif %}
+            <h2>{{ restaurant.name }}</h2>
+            <p class="text-muted">{{ restaurant.cuisine_type }} • {{ restaurant.price_range }}</p>
+            <p>{{ restaurant.description }}</p>
+            <p><strong>Address:</strong> {{ restaurant.address }}</p>
+            <p><strong>Opening hours:</strong> {{ restaurant.opening_hours }}</p>
+            <div class="border rounded p-3 mb-3">
+                <strong>Average rating:</strong> {{ restaurant.average_rating }} / 5 ({{ restaurant.review_count }} reviews)
+            </div>
+        </div>
+    </div>
+
+    <section class="mt-5">
+        <h3>Signature food</h3>
+        <div class="row g-3 mt-1">
+            {% for dish in restaurant.signature_dishes.all %}
+            <div class="col-md-6 col-lg-4">
+                <article class="card h-100 border-0 shadow-sm">
+                    {% if dish.image %}<img src="{{ dish.image.url }}" class="card-img-top restaurant-thumb" alt="{{ dish.name }}">{% endif %}
+                    <div class="card-body">
+                        <h4 class="h5">{{ dish.name }}</h4>
+                        <p class="text-muted">{{ dish.description|default:"Description not provided." }}</p>
+                        <p class="mb-0">
+                            {% if dish.price %}
+                                {% if restaurant.is_demo %}<strong>Example price only: ₹{{ dish.price }}</strong>{% else %}<strong>₹{{ dish.price }}</strong>{% endif %}
+                            {% endif %}
+                            {% if dish.vegetarian %}<span class="badge bg-success ms-2">Vegetarian</span>{% endif %}
+                            {% if dish.specialty %}<span class="badge bg-primary ms-1">Specialty</span>{% endif %}
+                        </p>
+                    </div>
+                </article>
+            </div>
+            {% empty %}
+            <div class="col-12"><p class="text-muted">No signature dishes have been listed yet.</p></div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <div class="mt-5">
+        <h3>Reviews</h3>
+        {% for review in reviews %}
+        <div class="border rounded p-3 mb-3">
+            <strong>{{ review.reviewer.username }}</strong>
+            <div class="small text-muted">{{ review.rating }}/5</div>
+            <p>{{ review.comment }}</p>
+        </div>
+        {% empty %}
+        <p>No reviews yet.</p>
+        {% endfor %}
+    </div>
+
+    {% if not restaurant.is_demo %}
+    <div class="mt-5 card shadow-sm border-0">
+        <div class="card-body">
+            <h3>Add a Review</h3>
+            <form method="post" action="{% url 'submit_review' restaurant.id %}">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button class="btn btn-primary" type="submit">Submit Review</button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <p class="small text-muted mt-5">Reviews are disabled for fictional demo examples.</p>
+    {% endif %}
+</div>
+{% endblock %}

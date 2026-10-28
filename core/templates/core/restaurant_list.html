@@ -1,0 +1,104 @@
+{% extends 'core/base.html' %}
+{% block title %}Restaurant Discovery{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <h1 class="h2 mb-2">Search Restaurants</h1>
+    <p class="text-muted mb-4">Find live restaurant listings by name, cuisine, or location.</p>
+    <form class="row g-3 mb-4" method="get" role="search">
+        <div class="col-md-6">
+            <label class="visually-hidden" for="restaurant-search">Search restaurants by name, cuisine, or city</label>
+            <input id="restaurant-search" type="search" class="form-control" name="q" value="{{ query }}" placeholder="Search by name, cuisine, or city">
+        </div>
+        <div class="col-auto"><button class="btn btn-primary" type="submit">Search restaurants</button></div>
+    </form>
+
+    {% if query %}
+    {% if search_error %}<div class="alert alert-warning" role="alert">{{ search_error }}</div>{% endif %}
+    {% if catalog_restaurants %}
+    <section aria-labelledby="catalog-results-heading" class="mb-4">
+    <h2 id="catalog-results-heading" class="h4 mb-3">Imported matches for “{{ query }}”</h2>
+    <p class="small text-muted">These locally imported listings came from user-provided screenshots. They are unverified and may be incomplete; confirm the address and current details before visiting.</p>
+    <div class="row g-3">
+        {% for restaurant in catalog_restaurants %}
+        <div class="col-12">
+            <article class="alert alert-info mb-0">
+                <strong>{{ restaurant.name }}</strong>
+                <span class="ms-2">{{ restaurant.address }}</span>
+                {% if restaurant.is_demo %}
+                <div class="alert alert-warning small mt-2 mb-0">Demo example — not a real restaurant. Food and prices are examples only for planning and should not be treated as a live menu or a verified listing.</div>
+                {% endif %}
+                {% if restaurant.external_rating %}
+                <span class="ms-2">Reported rating: ★ {{ restaurant.external_rating }}{% if restaurant.external_review_count %} ({{ restaurant.external_review_count }} reviews){% endif %}</span>
+                {% endif %}
+                {% if restaurant.signature_dishes.all %}
+                <ul class="mb-0 mt-2 ps-3">
+                    {% for dish in restaurant.signature_dishes.all %}
+                    <li>{{ dish.name }}{% if restaurant.is_demo %} — Example price only: ₹{{ dish.price }}{% endif %}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <div class="small text-muted mt-2">{% if restaurant.is_demo %}This is a fictional demo example.{% else %}Unverified listing; confirm details before visiting.{% endif %}</div>
+                <div class="mt-3">
+                    <a class="btn btn-outline-primary"
+                       href="https://www.google.com/maps/search/?api=1&amp;query={{ restaurant.name|urlencode }}+{{ restaurant.address|urlencode }}"
+                       target="_blank"
+                       rel="noopener noreferrer">Open location in Google Maps</a>
+                </div>
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+    </section>
+    {% endif %}
+    {% if restaurants %}
+    <section aria-labelledby="restaurant-results-heading">
+    <h2 id="restaurant-results-heading" class="h4 mb-3">Results for “{{ query }}”</h2>
+    <p class="small text-muted">Live business listing details are provided by Google Maps and are not saved in the app. Ratings and availability can change.</p>
+    <div class="row g-3">
+        {% for restaurant in restaurants %}
+        <div class="col-12">
+            <article class="alert alert-info mb-0">
+                <strong>{{ restaurant.name }}</strong>
+                {% if restaurant.is_demo %}
+                <div class="alert alert-warning small mt-2 mb-0">Demo example — not a real restaurant. Food and prices are examples only for planning and should not be treated as a live menu or a verified listing.</div>
+                {% elif restaurant.formattedAddress %}<span class="ms-2">{{ restaurant.formattedAddress }}</span>{% endif %}
+                {% if restaurant.rating %}
+                <span class="ms-2">Google rating: ★ {{ restaurant.rating }}{% if restaurant.userRatingCount %} ({{ restaurant.userRatingCount }} ratings){% endif %}</span>
+                {% endif %}
+                {% if restaurant.primaryTypeDisplayName.text %}<span class="ms-2">{{ restaurant.primaryTypeDisplayName.text }}</span>{% endif %}
+                {% if restaurant.is_demo and restaurant.signature_dishes.all %}
+                <ul class="mb-0 mt-2 ps-3">
+                    {% for dish in restaurant.signature_dishes.all %}
+                    <li>{{ dish.name }} — Example price only: ₹{{ dish.price }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <div class="mt-3">
+                    {% if restaurant.googleMapsUri %}
+                    <a class="btn btn-outline-primary"
+                       href="{{ restaurant.googleMapsUri }}"
+                       target="_blank"
+                       rel="noopener noreferrer">Open location in Google Maps</a>
+                    {% else %}
+                    <a class="btn btn-outline-primary"
+                       href="https://www.google.com/maps/search/?api=1&amp;query={{ restaurant.name|urlencode }}{% if restaurant.formattedAddress %}+{{ restaurant.formattedAddress|urlencode }}{% endif %}"
+                       target="_blank"
+                       rel="noopener noreferrer">Open location in Google Maps</a>
+                    {% endif %}
+                </div>
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+    <span class="google-maps-attribution" translate="no">Google Maps</span>
+    </section>
+    {% elif not catalog_restaurants and search_error %}
+    <p class="text-muted">No matching imported listings are available for this search.</p>
+    {% elif not catalog_restaurants %}
+    <p class="text-muted">No restaurant listings were found for that search.</p>
+    {% endif %}
+    {% else %}
+    <p class="text-muted">Enter a restaurant name, cuisine, or location to search.</p>
+    {% endif %}
+</div>
+{% endblock %}

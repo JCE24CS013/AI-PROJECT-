@@ -1,0 +1,73 @@
+{% extends 'core/base.html' %}
+{% block title %}Choose Login{% endblock %}
+{% block content %}
+<section class="login-shell py-5">
+    <div class="container py-lg-4">
+        {% if role %}
+                <div class="row justify-content-center">
+                    <div class="col-md-6 col-lg-5">
+                        <div class="card login-card border-0 shadow-lg">
+                            <div class="card-body p-4 p-lg-5">
+                                <a class="small text-decoration-none" href="{% url 'login' %}">← Back to sign in</a>
+                                <div class="login-icon mt-4">🧭</div>
+                                <h1 class="h3 mt-3 mb-1">Tourist sign in</h1>
+                                <p class="text-muted mb-4">Plan a trip, discover food, and chat with your travel assistant.</p>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="role" value="{{ role }}">
+                                    <div class="mb-3">
+                                        <label class="form-label" for="username">Username</label>
+                                        <input id="username" type="text" name="username" class="form-control form-control-lg" autocomplete="username" required autofocus>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="password">Password</label>
+                                        <input id="password" type="password" name="password" class="form-control form-control-lg" autocomplete="current-password" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-lg w-100">Sign in</button>
+                                </form>
+                                <div class="mt-3 text-center"><a href="{% url 'password_reset' %}">Forgot password?</a></div>
+                                <hr class="my-4">
+                                <div class="text-center">
+                                    New here? <a href="{% url 'tourist_register' %}">Create a tourist account</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center mb-5">
+                    <span class="eyebrow">AI TOURIST ROUTE OPTIMIZER</span>
+                    <h1 class="display-5 fw-bold mt-3">Welcome, traveler</h1>
+                    <p class="lead text-muted">Your next adventure starts with one small step.</p>
+                    <blockquote class="landing-quote mx-auto mt-4 mb-0">
+                        “Every great journey begins with a little planning and a lot of curiosity.”
+                    </blockquote>
+                </div>
+                <div class="row g-4 justify-content-center">
+                    <div class="col-md-6 col-lg-5">
+                        <a class="portal-choice portal-tourist card border-0 shadow-lg h-100 text-decoration-none" href="{% url 'login' %}?role=tourist">
+                            <div class="card-body p-4 p-lg-5">
+                                <div class="login-icon">🧭</div>
+                                <span class="eyebrow">FOR TRAVELERS</span>
+                                <h2 class="h3 mt-2 text-dark">Plan a trip</h2>
+                                <p class="text-muted">Sign in to create a route, explore destinations, and find local food along the way.</p>
+                                <span class="btn btn-primary mt-2">Sign in and start planning</span>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-6 col-lg-5">
+                        <a class="portal-choice card border-0 shadow-lg h-100 text-decoration-none" href="{% url 'tourist_register' %}">
+                            <div class="card-body p-4 p-lg-5">
+                                <div class="login-icon">🗺️</div>
+                                <span class="eyebrow">NEW TO THE APP?</span>
+                                <h2 class="h3 mt-2 text-dark">Start your journey</h2>
+                                <p class="text-muted">Create a traveler account to start planning and keep track of your trips.</p>
+                                <span class="btn btn-outline-primary mt-2">Create an account</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+    </div>
+</section>
+{% endblock %}
